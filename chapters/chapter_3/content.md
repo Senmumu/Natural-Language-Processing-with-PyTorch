@@ -69,9 +69,89 @@ plt.show()
 #Tanh
 tanh激活函数是S形的美容上不同的变体。 当你写下tanh的表达式时，这一点就变得清晰了：
 
-$f(x)= tanh x = \frac{e^x-e^-x}{e^x-e^-x}$
-通过一些争论（我们将其作为练习留给您），您可以说服自己，tanh只是S形函数的线性变换，如例3-3所示。 当你写下tanh（）的PyTorch代码并绘制曲线时，这一点也很明显。 请注意，tanh与sigmoid一样，也是一种“挤压”函数，除了它将实际值集合从（-∞，+∞）映射到范围[-1，+ 1]。“
+$f(x)= tanh x = \frac{e^x-e^-x}{e^x+e^-x}$
+
+通过一些争论（我们将其作为练习留给您），您可以说服自己，tanh只是S形函数的线性变换，如例3-3所示。 当你写下tanh（）的PyTorch代码并绘制曲线时，这一点也很明显。 请注意，tanh与sigmoid一样，也是一种“挤压”函数，除了它将实际值集合从$（-∞，+∞）$映射到范围$[-1，+ 1]$。“
 
 
-RELU
-ReLU（发音为ray-luh）代表整流线性单元。 这可以说是最重要的激活功能。 事实上，人们可以冒险说，如果不使用ReLU，很多近期的深度学习创新都是不可能的。 对于一些如此基础的东西，就神经网络激活功能而言，它也是一个令人惊讶的新东西。 它的形式非常简单：
+# RELU
+ReLU 代表整流线性单元。 这可以说是最重要的激活功能。 事实上，人们可以冒险说，如果不使用ReLU，很多近期的深度学习创新都是不可能的。 对于一些如此基础的东西，就神经网络激活功能而言，它也是一个令人惊讶的新东西。 它的形式非常简单：
+
+$f(x) = max(0,x)$
+
+因此，所有ReLU单元做的是将负值剪切为零，如例3-4中所示。
+```python
+import torch
+import matplotlib.pyplot as plt
+
+relu = torch.nn.ReLU()
+x = torch.range(-5., 5., 0.1)
+y = relu(x)
+
+plt.plot(x.numpy(), y.numpy())
+plt.show()
+```
+ ![](../../imgs/page47image56741328.png)
+ReLU的削波效应有助于消除梯度问题也可能成为一个问题，随着时间的推移，网络中的某些输出可能会简单地变为零，永远不会再次复活。 这被称为“垂死的ReLU”问题。 为了减轻这种影响，已经提出了诸如Leaky ReLU和Parametric ReLU（PReLU）激活函数的变体，其中泄漏系数a是学习参数。 例3-5显示了结果。
+```python
+import torch
+import matplotlib.pyplot as plt
+
+prelu = torch.nn.PReLU(num_parameters=1)
+x = torch.range(-5., 5., 0.1)
+y = prelu(x)
+
+plt.plot(x.numpy(), y.numpy())
+plt.show()
+```
+
+# Softmax
+激活功能的另一个选择是softmax。 与sigmoid函数一样，softmax函数将每个单元的输出压缩到介于0和1之间，如例3-6所示。 然而，softmax操作还将每个输出除以所有输出的总和，这给出了k个可能类的离散概率分布3
+
+$softmax(x_i) = \frac{e^{x_i}}{\sum_{j=1}^{k} e^{x_j}}$
+
+所得分布的概率总和为1。 这对于解释分类任务的输出非常有用，因此这种转换通常与概率训练目标配对，例如分类交叉熵，“深入潜水监督培训”中对此进行了介绍。
+- input 0
+```python
+import torch.nn as nn
+import torch
+
+softmax = nn.Softmax(dim=1)
+x_input = torch.randn(1, 3)
+y_output = softmax(x_input)
+print(x_input)
+print(y_output)
+print(torch.sum(y_output, dim=1))
+```
+- output 0
+```
+tensor([[ 0.5836, -1.3749, -1.1229]])
+tensor([[ 0.7561,  0.1067,  0.1372]])
+tensor([ 1.])
+```
+# Loss function
+在第1章中，我们看到了一般监督机器学习架构以及损失函数或目标函数如何帮助指导训练算法通过查看数据来选择正确的参数。 回想一下，损失函数将真值（y）和预测（ŷ）作为输入并产生实值得分。 该分数越高，模型的预测就越差。 PyTorch在其nn包中实现了比我们可以覆盖的更多的损失函数，但我们将回顾一些最常用的损失函数。
+
+-input 0
+```
+import torch
+import torch.nn as nn
+
+mse_loss = nn.MSELoss()
+outputs = torch.randn(3, 5, requires_grad=True)
+targets = torch.randn(3, 5)
+loss = mse_loss(outputs, targets)
+print(loss)
+```
+- output 0
+```
+tensor([[ 0.5836, -1.3749, -1.1229]])
+tensor([[ 0.7561,  0.1067,  0.1372]])
+tensor([ 1.])
+```
+在本节中，我们研究了四个重要的激活函数：sigmoid，tanh，ReLU和softmax。 这些只是您可以用于构建神经网络的许多可能激活中的四种。 随着我们逐步完成这本书，将会清楚应该使用哪些激活功能以及在哪里，但一般指南只是简单地遵循过去的工作。
+## “Mean Squared Error Loss
+
+对于网络输出（ŷ）和目标（y）是连续值的回归问题，一个常见的损失函数是均方误差（MSE）：
+
+
