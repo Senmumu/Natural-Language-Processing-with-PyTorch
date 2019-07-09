@@ -758,3 +758,412 @@ Values:
 
 
 实施例112。复合索引：张量的不连续的索引
+- input 0
+```python
+indices = torch.LongTensor([0, 2])
+describe(torch.index_select(x, dim=1, index=indices))
+```
+- output 0
+```
+Type: torch.FloatTensor
+Shape/size: torch.Size([2, 2])
+Values:
+tensor([[ 0.,  2.],
+       [ 3.,  5.]])
+```
+
+- input 1
+```python
+indices = torch.LongTensor([0, 0])
+describe(torch.index_select(x, dim=0, index=indices))
+```
+- output 1
+```
+Type: torch.FloatTensor
+Shape/size: torch.Size([2, 3])
+Values:
+tensor([[ 0.,  1.,  2.],
+       [ 0.,  1.,  2.]])
+```
+- input 2
+```python
+row_indices = torch.arange(2).long()
+col_indices = torch.LongTensor([0, 1])
+describe(x[row_indices, col_indices])
+```
+- output
+```
+Type: torch.FloatTensor
+Shape/size: torch.Size([2])
+Values:
+tensor([ 0.,  4.]
+```
+
+请注意，该指数是一个LongTensor;这是利用PyTorch索引的要求
+功能。我们还可以使用内置拼接功能加入张量，如图
+例1-13 通过指定张量和尺寸
+- input 0
+```python
+import torch
+x = torch.arange(6).view(2,3)
+describe(x)
+```
+- output 0
+```
+Type: torch.FloatTensor
+Shape/size: torch.Size([2, 3])
+Values:
+tensor([[ 0.,  1.,  2.],
+       [ 3.,  4.,  5.]])
+```
+- input 0
+```
+import torch
+x = torch.arange(6).view(2,3)
+describe(x)
+```
+- output 0
+```
+Type: torch.FloatTensor
+Shape/size: torch.Size([2, 3])
+Values:
+tensor([[ 0.,  1.,  2.],
+     [ 3.,  4.,  5.]])
+```
+
+- input 1
+```python
+describe(torch.cat([x, x], dim=0))
+```
+- output 1
+```
+Type: torch.FloatTensor
+Shape/size: torch.Size([4, 3])
+Values:
+tensor([[ 0.,  1.,  2.],
+     [ 3.,  4.,  5.],
+     [ 0.,  1.,  2.],
+     [ 3.,  4.,  5.]])
+```
+
+- input 2
+```python
+describe(torch.cat([x, x], dim=1))
+```
+- output 2
+```
+Type: torch.FloatTensor
+Shape/size: torch.Size([2, 6])
+Values:
+tensor([[ 0.,  1.,  2.,  0.,  1.,  2.],
+     [ 3.,  4.,  5.,  3.,  4.,  5.]])
+```
+
+- input 3
+```
+describe(torch.stack([x, x]))
+```
+- output 3
+```
+Type: torch.FloatTensor
+Shape/size: torch.Size([2, 2, 3])
+Values:
+tensor([[[ 0.,  1.,  2.],
+     [ 3.,  4.,  5.]],
+     [[ 0.,  1.,  2.],
+      [ 3.,  4.,  5.]]])
+```
+PyTorch还实现上张量高效线性代数运算，如乘法，
+求逆，和追踪，你可以在例1-14看到。
+
+- input 0
+```python
+import torch
+x1 = torch.arange(6).view(2, 3)
+describe(x1)
+```
+- output 0
+```
+Type: torch.FloatTensor
+Shape/size: torch.Size([2, 3])
+Values:
+tensor([[ 0.,  1.,  2.],
+     [ 3.,  4.,  5.]])
+```
+- input
+```python
+x2 = torch.ones(3, 2)
+x2[:, 1] += 1
+describe(x2)
+```
+- output 1
+```
+Type: torch.FloatTensor
+Shape/size: torch.Size([3, 2])
+Values:
+tensor([[ 1.,  2.],
+     [ 1.,  2.],
+     [ 1.,  2.]])
+```
+
+- input 2
+```python
+describe(torch.mm(x1, x2))
+```
+- output 2
+```
+Type: torch.FloatTensor
+Shape/size: torch.Size([2, 2])
+Values:
+tensor([[  3.,   6.],
+     [ 12.,  24.]])
+```
+到目前为止，我们已经研究了创建和操作常量PyTorch张量对象的方法。 正如编程语言（例如Python）具有封装一段数据的变量并且具有关于该数据的附加信息（例如，存储它的存储器地址），PyTorch张量器处理构建计算图形所需的簿记。 机器学习只需在实例化时启用布尔标志即可。
+
+# 张量和计算图
+PyTorch张量类封装了数据（张量本身）和一系列操作，如代数运算，索引和整形操作。 但是，如示例115所示，当在张量上将requires_grad布尔标志设置为True时，启用簿记操作，该操作可以跟踪张量的梯度以及梯度函数，这两者都是为了便于在TheSupervisedLearningParadigm中讨论的梯度学习所需要的。。
+
+
+例1-15 为梯度簿记创建张量
+- input 0
+```python
+import torch
+x = torch.ones(2, 2, requires_grad=True) 
+describe(x)
+print(x.grad is None)
+```
+
+- output 0
+```
+Type: torch.FloatTensor 
+Shape/size: torch.Size([2, 2]) 
+Values:
+tensor([[ 1., 1.],
+[ 1., 1.]]) True
+```
+
+- input 1
+```python
+y = (x + 2) * (x + 5) + 3 
+describe(y)
+print(x.grad is None)
+```
+
+- output 1
+```
+Type: torch.FloatTensor 
+Shape/size: torch.Size([2, 2]) 
+Values:
+tensor([[ 21., 21.],
+[ 21., 21.]]) True
+```
+
+- input 2
+```python
+z = y.mean()
+describe(z) 
+z.backward() 
+print(x.grad is None)
+```
+
+- output 2
+```
+Type: torch.FloatTensor 
+Shape/size: torch.Size([]) 
+Values:
+21.0
+False
+```
+
+当您使用`requires_grad = True`创建张量时，您需要PyTorch来管理计算渐变的簿记信息。 首先，PyTorch将跟踪前向传球的值。 然后，在计算结束时，使用单个标量来计算后向传递。 通过在评估损失函数时产生的张量上使用`backward（）`方法来启动向后传递。 向后传递计算参与正向传递的张量对象的梯度值。
+通常，梯度是表示函数输出相对于函数输入的斜率的值。 在计算图设置中，模型中的每个参数都存在梯度，可以将其视为参数对误差信号的贡献。 在PyTorch中，您可以使用.grad成员变量访问计算图中节点的渐变。 优化器使用`.grad`变量来更新参数的值。
+CUDA Tensors
+到目前为止，我们一直在CPU内存上分配我们的张量。在进行线性代数运算时，如果你有GPU，那么使用GPU可能是有意义的。要使用GPU，您需要首先在GPU的内存上分配张量。通过名为CUDA的专用API访问GPU。 CUDA API由NVIDIA创建，仅限于在NVIDIA GPU上使用.9 PyTorch提供的CUDA张量对象在使用时与常规CPU绑定器无法区分，除了它们在内部分配的方式。
+PyTorch可以很容易地创建这些CUDA张量，将张量从CPU传输到GPU，同时保持其基础类型。 PyTorch中的首选方法是与设备无关，并编写无论是在GPU还是在CPU上运行的代码。在示例116中，我们首先使用torch.cuda.is_available（）检查GPU是否可用，并使用torch.device（）检索设备名称。然后，通过使用.to（设备）方法实例化所有未来的张量并将其移动到目标设备。
+
+例1-16 创建CUDA张量
+
+- input 0
+```python
+import torch
+print (torch.cuda.is_available())
+```
+
+- output 0
+```
+True
+```
+
+- input 1
+```python
+# preferred method: device agnostic tensor instantiation
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
+print (device)
+```
+
+- output 1
+```
+cuda
+```
+
+- input 2
+```python
+x = torch.rand(3, 3).to(device) 
+describe(x)
+```
+
+- output 2
+```
+Type: torch.cuda.FloatTensor 
+Shape/size: torch.Size([3, 3]) 
+Values:
+tensor([[ 0.9149, 0.3993, 0.1100],
+[ 0.2541, 0.4333, 0.4451],
+[ 0.4966, 0.7865, 0.6604]], device='cuda:0')
+```
+要对CUDA和nonCUDA对象进行操作，我们需要确保它们位于同一设备上。 如果我们不这样做，计算就会中断，如例子117所示。 例如，当计算不属于计算图的监视度量时，会出现这种情况。 在两个张量对象上操作时，请确保它们都在同一设备上。
+例1-17 将CUDA张量与CPU绑定张量混合
+
+- input 0
+
+```python
+y = torch.rand(3, 3) x+y
+```
+
+- output 0
+```
+------------------------------------------------- 
+RuntimeError Traceback (most recent call last)
+1 y = torch.rand(3, 3) ---> 2 x + y
+RuntimeError: Expected object of type
+torch.cuda.FloatTensor but found type torch.FloatTensor for argument #3 '
+```
+- input 1
+```python
+cpu_device = torch.device("cpu") 
+y = y.to(cpu_device)
+x = x.to(cpu_device)
+x+y
+```
+- output 1
+```
+tensor([[ 0.7159, 1.0685, 1.3509], [ 0.3912, 0.2838, 1.3202],
+[ 0.2967, 0.0420, 0.6559]])
+```
+请记住，从GPU来回移动数据是很昂贵的。 因此，典型的过程涉及在GPU上执行许多可并行化的计算，然后将最终结果传送回CPU。 这将允许您充分利用GPU。 如果您有多个CUDAvisible设备（即多个GPU），最佳做法是在执行程序时使用CUDA_VISIBLE_DEVICES环境变量，如下所示：
+
+```sh
+CUDA_VISIBLE_DEVICES=0,1,2,3 python main.py
+```
+
+作为本书的一部分，我们不涉及并行性和multiGPU培训，但它们在扩展实验中是必不可少的，有时甚至是训练大型模型。 我们建议您参考
+yTorch文档和论坛，以获得有关此主题的其他帮助和支持。
+# 练习
+掌握主题的最佳方法是解决问题。 这里有一些热身练习。 许多问题需要经过官方的观察并找到有用的功能。
+1.创建2D张量，然后添加在尺寸0处插入的尺寸为1的尺寸。
+2.删除刚添加到先前张量的额外尺寸。
+3.在区间[3,7]中创建一个形状为5x3的随机张量
+4.使用正态分布中的值创建张量（mean = 0，std = 1）。
+5.检索张量torch.Tensor（[1,1,1,0,1]）中所有非零元素的索引。
+。创建一个大小为(3,1)的随机张量，然后将四个副本水平堆叠在一起。
+
+7.返回两个三维矩阵的批量矩阵矩阵乘积
+`(a = torch.rand(3,4,5)，b = torch.rand(3,5,4))`。
+
+8.返回3D矩阵和2D矩阵的批量矩阵矩阵乘积
+`(a = torch.rand(3,4,5)，b = torch.rand(5,4))`。
+解决方案
+
+1. `a = torch.rand(3,3)a.unsqueeze(0)`
+
+2. `a.squeeze(0)`
+
+3. `3 + torch.rand(5,3)`
+
+4. `a = torch.rand(3,3)`
+`a.normal_()`
+
+5. `a = torch.Tensor([1，`
+  `torch.nonzero(a)`中
+
+6. `a = torch.rand(3,1)`
+  `a.expand(3,4)`
+
+7. `a = torch.rand(3, 4, 5)`
+    `b = torch.rand(3, 5, 4)`
+    `torch.bmm(a, b)`
+8. `a = torch.rand(3,4,5)`
+    `b = torch.rand(5,4)`
+    
+    `torch.bmm(a，b.unsqueeze(0).expand(a.size(0)，* b.size())`
+# 小结
+在本章中，我们介绍了本书的主要内容 - 自然语言处理(NLP)和深度学习 - 并对监督学习范式进行了详细的理解。您现在应该熟悉或至少知道各种相关术语，例如观察，目标，模型，参数，预测，损失函数，表示，学习/训练和推理。您还了解了如何使用onehot编码对学习任务的输入(观察和目标)进行编码，我们还检查了基于计数的表示，如TF和TFIDF。我们首先探索计算图是什么，然后考虑静态与动态计算图并参观PyTorch的张量操纵操作，开始了我们的PyTorch之旅。在第2章中，我们提供了传统NLP的概述。如果您对本书的主题不熟悉并为其他章节做好准备，这两章应该为您奠定必要的基础。
+例1-17 将CUDA张量与CPU绑定张量混合
+
+- input 0
+
+```python
+y = torch.rand(3, 3) x+y
+```
+
+- output 0
+```
+------------------------------------------------- 
+RuntimeError Traceback (most recent call last)
+1 y = torch.rand(3, 3) ---> 2 x + y
+RuntimeError: Expected object of type
+torch.cuda.FloatTensor but found type torch.FloatTensor for argument #3 '
+```
+- input 1
+```python
+cpu_device = torch.device("cpu") 
+y = y.to(cpu_device)
+x = x.to(cpu_device)
+x+y
+```
+- output 1
+```
+tensor([[ 0.7159, 1.0685, 1.3509], [ 0.3912, 0.2838, 1.3202],
+[ 0.2967, 0.0420, 0.6559]])
+```
+请记住，从GPU来回移动数据是很昂贵的。 因此，典型的过程涉及在GPU上执行许多可并行化的计算，然后将最终结果传送回CPU。 这将允许您充分利用GPU。 如果您有多个CUDAvisible设备（即多个GPU），最佳做法是在执行程序时使用CUDA_VISIBLE_DEVICES环境变量，如下所示：
+
+```sh
+CUDA_VISIBLE_DEVICES=0,1,2,3 python main.py
+```
+
+作为本书的一部分，我们不涉及并行性和multiGPU培训，但它们在扩展实验中是必不可少的，有时甚至是训练大型模型。 我们建议您参考
+yTorch文档和论坛，以获得有关此主题的其他帮助和支持。
+# 练习
+掌握主题的最佳方法是解决问题。 这里有一些热身练习。 许多问题需要经过官方的观察并找到有用的功能。
+1.创建2D张量，然后添加在尺寸0处插入的尺寸为1的尺寸。
+2.删除刚添加到先前张量的额外尺寸。
+3.在区间[3,7]中创建一个形状为5x3的随机张量
+4.使用正态分布中的值创建张量（mean = 0，std = 1）。
+5.检索张量torch.Tensor（[1,1,1,0,1]）中所有非零元素的索引。
+# 参考
+
+1. PyTorch官方API文档。
+2. Dougherty, James, Ron Kohavi, and Mehran Sahami. (1995). “Supervised and Unsupervised Discretization of Continuous Features.” Proceedings of the 12th International Conference on Machine Learning.
+3. Collobert, Ronan, and Jason Weston. (2008). “A Unified Architecture for Natural Language Processing: Deep Neural Networks with Multitask Learning.” Proceedings of the 25th International Conference on Machine Learning.
+
+<hr>
+
+1. 虽然神经网络和NLP的历史悠久而丰富，但Collobert和Weston（2008）经常被认为是对NLP采用现代风格应用深度学习的先驱。
+
+2. 分类变量是一个采用一组固定值的变量;例如，{TRUE，FALSE}，{VERB，NOUN，ADJECTIVE，...}，以及更多其他的。
+
+3. 深度学习与2006年之前的文献中讨论的传统神经网络不同，它指的是越来越多的技术，通过添加更多的网络工作.在章节3和4中我们会研究为什么这很重要。
+
+4. “序数”分类是多类分类问题，其中标签之间存在部分顺序。在我们的年龄示例中，类别“0-18”出现在“19-25”之前，依此类推。
+
+5. Seppo Linnainmaa首先在计算图上引入了自动微分的想法，作为他1970年硕士论文的一部分！其中的变体成为现代深度学习框架的基础，如Theano，TensorFlow和PyTorch。
+
+6. 从v1.7开始，TensorFlow有一个“急切模式（eager mode）”，它使得在执行之前无需编译图形，但静态图仍然是TensorFlow的支柱。
+
+7. 您可以在本书的gitHub repo中的 */chapters/chapter_1/PyTorch_Basics.ipynb* 下找到此部分的代码。
+
+8. 标准正态分布是正态分布，均值`= 0`且方差`= 1`，
+
+9. 这意味着如果你有一个非NVIDIA GPU，比如说AMD或ARM，那么你在写这篇文章时就不走运了（当然，你仍然可以在CPU模式下使用PyTorch）。但是，他将来可能会改变。
+
