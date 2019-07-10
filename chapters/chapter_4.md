@@ -53,3 +53,109 @@ def forward（self，x_in，apply_softmax = False）：
 “EC
 在例子42中，我们实例化MLP。由于MLP实现的一般性，我们可以对任何大小的输入进行建模。为了演示，我们使用大小为3的输入维度，大小为4的输出维度和大小为100的隐藏维度。请注意，如果在print语句的输出中，每个层中的单元数很好地排列以产生一个尺寸为4的输入的尺寸为4的输出。
 实施例42。 MLP的示例实例化
+
+
+并通过迭代字符串输入中的每个字符来创建输入的折叠单一向量表示。我们为以前没有遇到的字符指定一个特殊标记UNK。 UNK符号仍然用在字符词汇表中，因为我们仅从训练数据中实例化词汇表，并且验证或测试数据中可能存在唯一字符。 4
+                                                                                   您应该注意，尽管我们在此示例中使用了折叠的单拍表示，但您会这样做
+ ＃实现与示例314几乎相同
+def __getitem __（self，index）：
+row = self._target_df.iloc [index] surname_vector = \
+self._vectorizer.vectorize（row.surname）nationality_index = \
+self._vectorizer.nationality_vocab.lookup_token（row.nationality）
+return {'x_surname'：surname_vector，'y_nationality'：nationality_index}
+ 1“ EN
+
+在后面的章节中了解其他矢量化方法，这些方法是替代，有时甚至是单独编码。特别是在例如：ClassificationSurnamesbyUsingaCNN“中，您将看到一个单一矩阵，其中每个字符都是矩阵中的一个位置，并且有一个热点向量。然后，在第5章中，您将了解嵌入层，返回整数向量的向量化，以及如何使用这些向量来创建密集向量矩阵。但是现在，让我们来看看xample 46中SurnameVectorizer的代码。
+例46。实现SurnameVectorizer
+                        
+class SurnameVectorizer（object）：
+msgstr“”“协调词汇表并将它们用于使用的Vectorizer”
+def __init __（self，surname_vocab，nationality_vocab）：self.surname_vocab = surname_vocab self.nationality_vocab = nationality_vocab
+def vectorize（self，surname）：
+“”将所提供的姓氏矢量化
+ARGS：
+姓（str）：姓氏
+返回：
+one_hot（np.ndarray）：折叠的onehot编码
+“””
+vocab = self.surname_vocab
+one_hot = np.zeros（len（vocab），dtype = np.float32）姓氏中的令牌：
+one_hot [vocab.lookup_token（token）] = 1返回one_hot
+@classmethod
+def from_dataframe（cls，surname_df）：
+msgstr“”“从数据集数据框中实例化矢量化器
+ARGS：
+surname_df（pandas.DataFrame）：姓氏数据集
+返回：
+SurnameVectorizer的一个实例
+“””
+surname_vocab =词汇（unk_token =“@”）nationality_vocab =词汇（add_unk = False）
+对于index，在surname_df.iterrows（）中的行：对于row.surname中的字母：
+surname_vocab.add_token（letter）nationality_vocab.add_token（row.nationality）
+return cls（surname_vocab，nationality_vocab）
+ 
+  
+ 
+  
+  
+  
+ 
+“
+  
+SurnameClassifier模型
+TheSurnameClassifier（xample47）是本章前面介绍的MLP的实现。第一个线性层将输入矢量映射到中间矢量，并将非线性应用于该矢量。第二线性层将中间矢量映射到预测矢量。
+
+在最后一步中，可选地应用softmax函数以确保输出总和为1;也就是说，它被解释为“概率”.5它是可选的原因与数学公式有关，即在损失函数中引入的thecrossentropyloss“thecrossentropyloss”。回想一下，对于多类分类来说，交叉熵损失是最理想的，但是在训练期间计算softmax不仅浪费，而且在许多情况下也不是数值稳定的。
+例47。使用MLP的SurnameClassifier
+                          
+import torch.nn as nn
+导入torch.nn.functional为F
+class SurnameClassifier（nn.Module）：
+“”用于分类姓氏的2层多层感知器“”“
+def __init __（self，input_dim，hidden_​​dim，output_dim）：
+“”Args：
+input_dim（int）：输入向量的大小
+hidden_​​dim（int）：第一个线性图层output_dim（int）的输出大小：第二个线性图层的输出大小
+“””
+super（SurnameClassifier，self）.__ init __（）self.fc1 = nn.Linear（input_dim，hidden_​​dim）self.fc2 = nn.Linear（hidden_​​dim，output_dim）
+def forward（self，x_in，apply_softmax = False）：
+“”分类器的正向传递
+ARGS：
+x_in（torch.Tensor）：输入数据张量
+x_in.shape应该是（batch，input_dim）apply_softmax（bool）：softmax激活的标志
+如果与crossentropy损失一起使用，则应为false返回：
+由此产生的张量。 tensor.shape应该是（batch，output_dim）。 “””
+intermediate_vector = F.relu（self.fc1（x_in））prediction_vector = self.fc2（intermediate_vector）
+如果apply_softmax：
+prediction_vector = F.softmax（prediction_vector，dim = 1）
+return prediction_vector
+ 
+  
+ 
+ 
+ 
+  
+  
+ 
+ 
+ 
+训练套路
+虽然我们在此示例中使用了不同的模型，数据集和损失函数，但训练例程仍与上一章中描述的相同。因此，在示例48中，我们仅示出了在示例和示例中的训练程序中的argsandthemajordifferences：
+lassifying Sentiment of Restaurant评论“。
+例48。基于MLP的Yelp审阅分类器的超参数和程序选项
+                           
+args =命名空间（
+＃数据和路径信息
+1“ EC
+培训中最显着的差异与模型中的输出类型和使用的损失函数有关。在此示例中，输出是可以转换为概率的多类预测向量。可用于此输出的损失函数仅限于CrossEntropyLoss（）和NLLLoss（）。由于其简化，我们使用CrossEntropyLoss（）。
+在示例49中，我们展示了数据集，模型，损失函数和优化器的实例化。这些实例应该与第3章中的示例几乎完全相同。实际上，这个模式将在本书后面的章节中重复每个示例。
+例49。实例化数据集，模型，损失和优化程序
+                      
+dataset = SurnameDataset.load_dataset_and_make_vectorizer（args.surname_csv）vectorizer = dataset.get_vectorizer（）
+classifier = SurnameClassifier（input_dim = len（vectorizer.surname_vocab），hidden_​​dim = args.hidden_​​dim，
+output_dim = len（vectorizer.nationality_vocab））classifier = classifier.to（args.device）
+loss_func = nn.CrossEntropyLoss（dataset.class_weights）
+optimizer = optim.Adam（classifier.parameters（），lr = args.learning_rate）
+训练循环
+该示例的训练循环几乎与“训练循环”中的训练循环中描述的训练循环相同，除了变量名称。具体地，示例410示出了使用不同的密钥来从batch_dict中获取数据。除了这种美容差异，训练循环的功能保持不变。使用训练数据，计算模型输出，损失和梯度。然后，我们使用渐变来更新模型。
+例410。训练循环的片段
