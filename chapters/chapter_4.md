@@ -159,3 +159,39 @@ optimizer = optim.Adam（classifier.parameters（），lr = args.learning_rate�
 训练循环
 该示例的训练循环几乎与“训练循环”中的训练循环中描述的训练循环相同，除了变量名称。具体地，示例410示出了使用不同的密钥来从batch_dict中获取数据。除了这种美容差异，训练循环的功能保持不变。使用训练数据，计算模型输出，损失和梯度。然后，我们使用渐变来更新模型。
 例410。训练循环的片段
+模型评估与预测
+要了解模型的性能，您应该使用定量和定性方法分析模型。定量地，测量保持测试数据上的误差确定分类器是否可以概括为看不见的示例。定性地，您可以通过查看分类器的前k个预测来为新示例开发直观的模型学习内容。
+评估测试数据集
+为了评估测试数据上的SurnameClassifier，我们执行与restaurantreviewtextclassificationexamplein Evaluation，Inference和Inspect“相同的例程”：wesetthe split to iterate'test'数据，调用classifier.eval（）方法，并迭代测试数据与我们对其他数据的处理方式相同。在此示例中，调用classifier.eval（）可防止PyTorch在使用测试/评估数据时更新模型参数。
+该模型在测试数据上实现了约50％的准确度。如果您在随附的笔记本中运行培训例程，您会注意到培训数据的性能更高。这是因为模型总是更适合它所训练的数据，因此训练数据的性能并不表示新数据的性能。如果您跟随代码，我们建议您尝试不同大小的隐藏维度。您应该注意到性能的提高。 6但是，这种增长并不会很大（特别是与modelfrom相比：例如：SortSurnamesbyUsingaCNN“）。主要的反对意见认为折叠的单拍矢量化方法是弱表示。虽然它确实将每个姓氏紧凑地表示为单个向量，但它会丢弃字符之间的订单信息，这对于识别来源至关重要。
+分类一个新的SURNAME
+xample 411显示了对新姓氏进行分类的代码。给定姓氏作为字符串，该函数将首先应用矢量化过程，然后获得模型预测。请注意，我们包含apply_softmax标志，以便结果包含概率。在多项式情况下，模型预测是类概率列表。我们使用PyTorch张量max（）函数来获得最佳类，由最高预测概率表示。
+                                                                    
+optimizer.zero_grad（）
+#step 2.计算输出
+y_pred =分类器（batch_dict ['x_surname']）
+#step 3.计算损失
+loss = loss_func（y_pred，batch_dict ['y_nationality']）loss_batch = loss.to（“cpu”）。item（）
+running_loss + =（loss_batch running_loss）/（batch_index + 1）
+＃step 4.使用loss来产生gradients loss.backward（）
+＃step 5.使用优化器进行渐变步骤optimizer.step（）
+1“ E
+ 例411。使用现有模型（分类器）的推断：预测给定名称的国籍
+   def predict_nationality（name，classifier，vectorizer）：vectorized_name = vectorizer.vectorize（name）vectorized_name = torch.tensor（vectorized_name）.view（1,1）result = classifier（vectorized_name，apply_softmax = True）
+probability_values，indices = result.max（dim = 1）index = indices.item（）
+predict_nationality = vectorizer.nationality_vocab.lookup_index（index）probability_value = probability_values.item（）
+return {'nationality'：predict_nationality，'probability'：probability_value}
+ 回顾一个新的SURNAME的前K个预测
+查看不仅仅是最佳预测通常很有用。例如，NLP中的标准做法是采用前k个最佳预测并使用其他模型重新排列它们。 PyTorch提供了一个torch.topk（）函数，它提供了一种方便的方法来获得这些预测，如xample 412所示。
+实施例412。预测topk国籍
+                 def predict_topk_nationality（name，classifier，vectorizer，k = 5）：vectorized_name = vectorizer.vectorize（name）
+vectorized_name = torch.tensor（vectorized_name）.view（1,1）prediction_vector = classifier（vectorized_name，apply_softmax = True）probability_values，indices = torch.topk（prediction_vector，k = k）
+#return size是1，k
+probability_values = probability_values.detach（）。numpy（）[0] indices = indices.detach（）。numpy（）[0]
+results = []
+对于prob_value，zip中的索引（probability_values，indices）：
+nationality = vectorizer.nationality_vocab.lookup_index（index）results.append（{'nationality'：nationality，
+返回结果
+'概率'：prob_value}）
+ 规范MLP：权重正则化和结构正规化（或辍学）
+在第3章中，我们解释了正则化如何成为过度拟合问题的解决方案，并研究了两种重要的权重正则化类型-L1和L2。这些权重正则化方法也适用于MLP以及卷积神经网络，我们将在下一节中讨论。除了权重正则化之外，对于深度模型（即具有多个层的模型），例如本章中讨论的前馈网络，结构
